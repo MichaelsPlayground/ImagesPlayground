@@ -54,7 +54,6 @@
                 app:dividerInsetEnd="16dp"
                 app:dividerInsetStart="16dp" />
 
-
             <Button
                 android:id="@+id/btnScaledDown"
                 android:layout_width="match_parent"
@@ -81,6 +80,38 @@
                 app:dividerInsetEnd="16dp"
                 app:dividerInsetStart="16dp" />
 
+            <Button
+                android:id="@+id/btnBitmapConversionByteArray"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Bitmap to ByteArray conversion" />
+
+            <ImageView
+                android:id="@+id/ivBitmapConversion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                />
+
+            <TextView
+                android:id="@+id/tvBitmapConversionSizes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:text="width: 0  height: 0 pixel: 0" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:dividerInsetEnd="16dp"
+                app:dividerInsetStart="16dp" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:dividerInsetEnd="16dp"
+                app:dividerInsetStart="16dp" />
         </LinearLayout>
 
     </ScrollView>

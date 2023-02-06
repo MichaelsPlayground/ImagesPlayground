@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -32,6 +33,10 @@ public class MainActivity extends AppCompatActivity {
     ImageView imageScaledDown;
     TextView imageScaledDownSizes;
 
+    Button bitmapToByteArrayConversion;
+    ImageView imageConversion;
+    TextView imageConversionSizes;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +50,10 @@ public class MainActivity extends AppCompatActivity {
         scaledDownImage = findViewById(R.id.btnScaledDown);
         imageScaledDown = findViewById(R.id.ivScaledDown);
         imageScaledDownSizes = findViewById(R.id.tvScaledDownSizes);
+
+        bitmapToByteArrayConversion = findViewById(R.id.btnBitmapConversionByteArray);
+        imageConversion = findViewById(R.id.ivBitmapConversion);
+        imageConversionSizes = findViewById(R.id.tvBitmapConversionSizes);
 
         loadImageFromGallery.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -70,6 +79,21 @@ public class MainActivity extends AppCompatActivity {
                         " height: " + newBitmap.getHeight() +
                         " pixel: " + (newBitmap.getWidth() * newBitmap.getHeight());
                 imageScaledDownSizes.setText(sizesData);
+
+
+            }
+        });
+
+        bitmapToByteArrayConversion.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "bitmap to bytearray conversion");
+
+                /*
+                Bitmap bmp = BitmapFactory.decodeByteArray(decryptedPicture, 0, decryptedPicture.length);
+                ImageView image = (ImageView) findViewById(R.id.imageView2);
+                image.setImageBitmap(Bitmap.createScaledBitmap(bmp, bmp.getWidth(), bmp.getHeight(), false));
+                */
             }
         });
     }
