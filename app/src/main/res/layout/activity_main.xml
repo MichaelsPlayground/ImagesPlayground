@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:text="Images playground"
+                android:textAlignment="center"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnLoadImageFromGallery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="load image from Gallery" />
+
+            <ImageView
+                android:id="@+id/ivOriginal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                />
+
+            <TextView
+                android:id="@+id/tvOriginalSizes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:text="width: 0  height: 0 pixel: 0" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:dividerInsetEnd="16dp"
+                app:dividerInsetStart="16dp" />
+
+
+            <Button
+                android:id="@+id/btnScaledDown"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="scale down the image" />
+
+            <ImageView
+                android:id="@+id/ivScaledDown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                />
+
+            <TextView
+                android:id="@+id/tvScaledDownSizes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:text="width: 0  height: 0 pixel: 0" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:dividerInsetEnd="16dp"
+                app:dividerInsetStart="16dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>
