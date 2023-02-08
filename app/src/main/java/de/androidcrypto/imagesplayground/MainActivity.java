@@ -33,6 +33,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -152,6 +153,24 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Log.i(TAG, "save bitmap to external shared storage");
 
+                Bitmap bitmap = ((BitmapDrawable) imageOriginal.getDrawable()).getBitmap();
+
+                if (Build.VERSION.SDK_INT < 29) {
+                    System.out.println("SDK < 29");
+                    boolean success = saveImageInAndroidApi28AndBelow(bitmap);
+                    Log.i(TAG, "the image storing was successful: " + success);
+                } else {
+                    System.out.println("SDK >= 29");
+                    try {
+                        Uri uri = saveImageInAndroidApi29AndAbove(bitmap);
+                        Log.i(TAG, "the image was stored with this URI: " + uri);
+                    } catch (IOException e) {
+                        Log.e(TAG, "error on storing image: " + e.getMessage());
+                        throw new RuntimeException(e);
+                    }
+
+                }
+
                 // more better:
                 // https://www.youtube.com/watch?v=tYQ8AO58Aj0
 
@@ -234,12 +253,17 @@ public class MainActivity extends AppCompatActivity {
          */
 
     private boolean saveImageInAndroidApi28AndBelow(Bitmap bitmap) {
+        Log.i(TAG, "saveImageInAndroidApi28AndBelow");
         OutputStream fos;
         String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
+        // DIRECTORY_DCIM = the image is placed in "external storage/DCIM, not in DCIM/Camera !
+
+        //String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+
         File image = new File(imagesDir, "IMG_" + System.currentTimeMillis() + ".png");
         try {
             fos = new FileOutputStream(image);
-            bitmap.compress(Bitmap.CompressFormat.PNG, 95, fos);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
             Objects.requireNonNull(fos).close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -251,11 +275,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public Uri saveImageInAndroidApi29AndAbove(@NonNull final Bitmap bitmap) throws IOException {
+        Log.i(TAG, "saveImageInAndroidApi29AndAbove");
         final ContentValues values = new ContentValues();
         values.put(MediaStore.MediaColumns.DISPLAY_NAME, "IMG_" + System.currentTimeMillis());
-        values.put(MediaStore.MediaColumns.MIME_TYPE, "image/png");
+        //values.put(MediaStore.MediaColumns.MIME_TYPE, "image/png"); // automatic file extension = .png
+        values.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg"); // automatic file extension = .jpg
         if (SDK_INT >= Build.VERSION_CODES.Q) {
             values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DCIM);
+            // DIRECTORY_DCIM = the image is placed in "external storage/DCIM, not in DCIM/Camera !
+
+            //values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+            // DIRECTORY_PICTURES = the image is placed in "external storage/Pictures
+
+            //values.put(MediaStore.MediaColumns.RELATIVE_PATH, "TestAbc");
+            // java.lang.IllegalArgumentException: Primary directory TestAbc not allowed for content://media/external/images/media; allowed directories are [DCIM, Pictures]
         }
         final ContentResolver resolver = getContentResolver();
         Uri uri = null;
@@ -271,12 +304,14 @@ public class MainActivity extends AppCompatActivity {
                     //isSuccess = false;
                     throw new IOException("Failed to open output stream.");
                 }
-                if (!bitmap.compress(Bitmap.CompressFormat.PNG, 95, stream)) {
+                //if (!bitmap.compress(Bitmap.CompressFormat.PNG, 95, stream)) {
+                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)) {
                     //isSuccess = false;
                     throw new IOException("Failed to save bitmap.");
                 }
             }
             //isSuccess = true;
+            Log.i(TAG, "the URI is: " + uri);
             return uri;
         } catch (IOException e) {
             if (uri != null) {
@@ -286,6 +321,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private boolean saveImageToExternalStorage(String imgName, Bitmap bmp) {
+        // https://www.youtube.com/watch?v=nA4XWsG9IPM
+        Uri imageCollection = null;
+        ContentResolver resolver = getContentResolver();
+        // > SDK 28
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            imageCollection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        } else {
+            imageCollection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        }
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, imgName + ".jpg");
+        contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        Uri imageUri = resolver.insert(imageCollection, contentValues);
+        try {
+            OutputStream outputStream = resolver.openOutputStream(Objects.requireNonNull(imageUri));
+            bmp.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            Objects.requireNonNull(outputStream);
+            return true;
+        } catch (Exception e)  {
+            Toast.makeText(this, "Image not saved: \n" + e, Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     /**
      * section for storage of image files END
