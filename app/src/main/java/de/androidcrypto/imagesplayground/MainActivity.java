@@ -2,6 +2,9 @@ package de.androidcrypto.imagesplayground;
 
 import static android.os.Build.VERSION.SDK_INT;
 
+import static androidx.core.content.PermissionChecker.PERMISSION_DENIED;
+import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
+
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -41,6 +44,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -58,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
     ImageView imageConversion;
     TextView imageConversionSizes;
 
+    Button checkForGrantedStoragePermission;
+    boolean storagePermissionIsGranted = false;
     Button grantStoragePermission;
     Button saveBitmapToExternalSharedStorage;
     TextView saveBitmapToExternalSharedStorageLogFile;
@@ -83,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
         imageConversion = findViewById(R.id.ivBitmapConversion);
         imageConversionSizes = findViewById(R.id.tvBitmapConversionSizes);
 
+        checkForGrantedStoragePermission = findViewById(R.id.btnCheckGrantedStoragePermission);
         grantStoragePermission = findViewById(R.id.btnGrantStoragePermission);
         saveBitmapToExternalSharedStorage = findViewById(R.id.btnSaveBitmapToExternalSharedStorage);
         saveBitmapToExternalSharedStorageLogFile = findViewById(R.id.tvSaveBitmapToExternalSharedStorage);
@@ -127,9 +134,9 @@ public class MainActivity extends AppCompatActivity {
 
                 Bitmap bitmap = ((BitmapDrawable) imageOriginal.getDrawable()).getBitmap();
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                bitmap.compress(Bitmap.CompressFormat.JPEG,10,stream);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 10, stream);
                 byte[] byteArray = stream.toByteArray();
-                Bitmap compressedBitmap = BitmapFactory.decodeByteArray(byteArray,0,byteArray.length);
+                Bitmap compressedBitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
                 imageConversion.setImageBitmap(compressedBitmap);
                 String sizesData = "imageByteArray length: " + byteArray.length + "\n";
                 sizesData += "Image sizes width: " + compressedBitmap.getWidth() +
@@ -151,6 +158,17 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        checkForGrantedStoragePermission.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "check for granted storage permission");
+                int permissionCheck = ContextCompat.checkSelfPermission(view.getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE);
+                saveBitmapToExternalSharedStorageLogFile.setText("check for granted storage permission result: " + permissionCheck +
+                        " (granted=" + PERMISSION_GRANTED + " , denied=" + PERMISSION_DENIED + ")");
+            }
+        });
+
+
         grantStoragePermission.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -158,7 +176,6 @@ public class MainActivity extends AppCompatActivity {
                 verifyPermissionsWriteImage();
             }
         });
-
 
         saveBitmapToExternalSharedStorage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -171,98 +188,26 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("SDK < 29");
                     boolean success = saveImageInAndroidApi28AndBelow(bitmap);
                     Log.i(TAG, "the image storing was successful: " + success);
+                    saveBitmapToExternalSharedStorageLogFile.setText("the image storing was successful: " + success);
                 } else {
                     System.out.println("SDK >= 29");
                     try {
                         Uri uri = saveImageInAndroidApi29AndAbove(bitmap);
                         Log.i(TAG, "the image was stored with this URI: " + uri);
+                        saveBitmapToExternalSharedStorageLogFile.setText("the image was stored with this URI: " + uri);
                     } catch (IOException e) {
                         Log.e(TAG, "error on storing image: " + e.getMessage());
                         throw new RuntimeException(e);
                     }
-
                 }
 
-                // more better:
-                // https://www.youtube.com/watch?v=tYQ8AO58Aj0
-
-                // better:
-                // https://www.youtube.com/watch?v=Ul4hum3y0J8
-                // https://www.youtube.com/watch?v=XSlvGizGxEs&t=0s
-
-
-                // https://www.youtube.com/watch?v=nA4XWsG9IPM
-                // How to Save Image to External Storage using Java API 30+ || Scoped Storage android Q R || Java
-
-                //registerWriteExternalStoragePermission();
-                //storageResultActivity.launch("");
             }
         });
     }
 
     /**
      * section for storage of image files
-     * source https://stackoverflow.com/a/70766323/8166854
-     * author: answered Jan 19, 2022 at 6:47 by OneDev
      */
-
-    private void registerWriteExternalStoragePermission() {
-        storageResultActivity = registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-            if (isGranted) {
-                checkStoragePermissionAndSaveImage(bitmap);
-            }
-        });
-    }
-
-    private void checkStoragePermissionAndSaveImage(Bitmap bitmap) {
-        Log.i(TAG, "checkStoragePermissionAndSaveImage");
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            Log.i(TAG, "now: saveImageInAndroidApi28AndBelow(bitmap)");
-            saveImageInAndroidApi28AndBelow(bitmap);
-        } else if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            //show user app can't save image for storage permission denied
-        } else {
-            Log.i(TAG, "storageResultActivity.launch");
-            storageResultActivity.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        }
-
-    }
-
-    ActivityResultLauncher<Intent> activityResultLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-        if (result.getResultCode() == RESULT_OK) {
-            Intent data = result.getData();
-            if (data == null || data.getData() == null) {
-                //showError
-            }
-            Uri uri = data.getData();
-            if (Build.VERSION.SDK_INT < 29) {
-                try {
-                    bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                ImageDecoder.Source source = ImageDecoder.createSource(getContentResolver(), uri);
-                try {
-                    bitmap = ImageDecoder.decodeBitmap(source);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-    });
-
-
-        /*
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            saveImageInAndroidApi28AndBelow(bitmap);
-        } else if (ActivityCompat.shouldShowRequestPermissionRationale(requireActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            //show user app can't save image for storage permission denied
-        } else {
-            storageResultActivity.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        }
-
-         */
 
     private void verifyPermissionsWriteImage() {
         String[] permissions = {Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -274,7 +219,6 @@ public class MainActivity extends AppCompatActivity {
             saveBitmapToExternalSharedStorageLogFile.setText("write external storage permissions granted");
             Log.i(TAG, "write external storage permissions granted");
             //writeImageToExternalSharedStorage();
-
         } else {
             ActivityCompat.requestPermissions(this,
                     permissions,
@@ -298,24 +242,39 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean saveImageInAndroidApi28AndBelow(Bitmap bitmap) {
         Log.i(TAG, "saveImageInAndroidApi28AndBelow");
-        OutputStream fos;
-        String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
-        // DIRECTORY_DCIM = the image is placed in "external storage/DCIM, not in DCIM/Camera !
+        final AtomicBoolean returnResult = new AtomicBoolean(false);
+        Thread DoSave = new Thread() {
+            public void run() {
+                Log.i(TAG, "running Thread DoBasicListFolder");
 
-        //String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+                OutputStream fos;
+                String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).toString();
+                // DIRECTORY_DCIM = the image is placed in "external storage/DCIM, not in DCIM/Camera !
 
-        File image = new File(imagesDir, "IMG_" + System.currentTimeMillis() + ".png");
+                //String imagesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).toString();
+
+                File image = new File(imagesDir, "IMG_" + System.currentTimeMillis() + ".png");
+                try {
+                    fos = new FileOutputStream(image);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                    Objects.requireNonNull(fos).close();
+                    returnResult.set(true);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    //isSuccess = false;
+                    //return false;
+                }
+                //isSuccess = true;
+                //return true;
+            }
+        };
+        DoSave.start();
         try {
-            fos = new FileOutputStream(image);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
-            Objects.requireNonNull(fos).close();
-        } catch (IOException e) {
+            DoSave.join();
+        } catch (InterruptedException e) {
             e.printStackTrace();
-            //isSuccess = false;
-            return false;
         }
-        //isSuccess = true;
-        return true;
+        return returnResult.get();
     }
 
     public Uri saveImageInAndroidApi29AndAbove(@NonNull final Bitmap bitmap) throws IOException {
@@ -365,32 +324,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private boolean saveImageToExternalStorage(String imgName, Bitmap bmp) {
-        // https://www.youtube.com/watch?v=nA4XWsG9IPM
-        Uri imageCollection = null;
-        ContentResolver resolver = getContentResolver();
-        // > SDK 28
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            imageCollection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-        } else {
-            imageCollection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-        }
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.Images.Media.DISPLAY_NAME, imgName + ".jpg");
-        contentValues.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
-        Uri imageUri = resolver.insert(imageCollection, contentValues);
-        try {
-            OutputStream outputStream = resolver.openOutputStream(Objects.requireNonNull(imageUri));
-            bmp.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-            Objects.requireNonNull(outputStream);
-            return true;
-        } catch (Exception e)  {
-            Toast.makeText(this, "Image not saved: \n" + e, Toast.LENGTH_SHORT).show();
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     /**
      * section for storage of image files END
      */
@@ -404,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
             byte[] bytesData = stream.toByteArray();
             stream.close();
             return bytesData;
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
@@ -420,7 +353,7 @@ public class MainActivity extends AppCompatActivity {
         int height = Math.round((float) ratio * realImage.getHeight());
 
         // to prevent upscaling
-        if (ratio >= 1.0){
+        if (ratio >= 1.0) {
             return realImage;
         }
 

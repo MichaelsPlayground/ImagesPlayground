@@ -107,6 +107,12 @@
                 app:dividerInsetStart="16dp" />
 
             <Button
+                android:id="@+id/btnCheckGrantedStoragePermission"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="check for Granted Storage Permission" />
+
+            <Button
                 android:id="@+id/btnGrantStoragePermission"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
