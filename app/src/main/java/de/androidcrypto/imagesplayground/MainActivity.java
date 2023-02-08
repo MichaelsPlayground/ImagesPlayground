@@ -58,8 +58,10 @@ public class MainActivity extends AppCompatActivity {
     ImageView imageConversion;
     TextView imageConversionSizes;
 
+    Button grantStoragePermission;
     Button saveBitmapToExternalSharedStorage;
     TextView saveBitmapToExternalSharedStorageLogFile;
+    private static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 100;
 
     private Bitmap bitmap;
     private ActivityResultLauncher<String> storageResultActivity;
@@ -81,10 +83,11 @@ public class MainActivity extends AppCompatActivity {
         imageConversion = findViewById(R.id.ivBitmapConversion);
         imageConversionSizes = findViewById(R.id.tvBitmapConversionSizes);
 
+        grantStoragePermission = findViewById(R.id.btnGrantStoragePermission);
         saveBitmapToExternalSharedStorage = findViewById(R.id.btnSaveBitmapToExternalSharedStorage);
         saveBitmapToExternalSharedStorageLogFile = findViewById(R.id.tvSaveBitmapToExternalSharedStorage);
 
-        registerWriteExternalStoragePermission();
+        //registerWriteExternalStoragePermission();
 
         loadImageFromGallery.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -147,6 +150,15 @@ public class MainActivity extends AppCompatActivity {
 */
             }
         });
+
+        grantStoragePermission.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "grant storage permission");
+                verifyPermissionsWriteImage();
+            }
+        });
+
 
         saveBitmapToExternalSharedStorage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -251,6 +263,38 @@ public class MainActivity extends AppCompatActivity {
         }
 
          */
+
+    private void verifyPermissionsWriteImage() {
+        String[] permissions = {Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                permissions[0]) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                permissions[1]) == PackageManager.PERMISSION_GRANTED) {
+            saveBitmapToExternalSharedStorageLogFile.setText("write external storage permissions granted");
+            Log.i(TAG, "write external storage permissions granted");
+            //writeImageToExternalSharedStorage();
+
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    permissions,
+                    REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                saveBitmapToExternalSharedStorageLogFile.setText("write permission granted");
+                Log.i(TAG, "write permission granted");
+            } else {
+                Toast.makeText(this, "Grant Storage Permission is Required to use this function.", Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "write permission NOT granted");
+            }
+        }
+    }
 
     private boolean saveImageInAndroidApi28AndBelow(Bitmap bitmap) {
         Log.i(TAG, "saveImageInAndroidApi28AndBelow");

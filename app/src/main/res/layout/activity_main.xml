@@ -107,6 +107,12 @@
                 app:dividerInsetStart="16dp" />
 
             <Button
+                android:id="@+id/btnGrantStoragePermission"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Grant Storage Permission" />
+
+            <Button
                 android:id="@+id/btnSaveBitmapToExternalSharedStorage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
