@@ -106,6 +106,25 @@
                 app:dividerInsetEnd="16dp"
                 app:dividerInsetStart="16dp" />
 
+            <Button
+                android:id="@+id/btnSaveBitmapToExternalSharedStorage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="save Bitmap to external shared storage" />
+
+            <TextView
+                android:id="@+id/tvSaveBitmapToExternalSharedStorage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:text="storage log file" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:dividerInsetEnd="16dp"
+                app:dividerInsetStart="16dp" />
+
             <com.google.android.material.divider.MaterialDivider
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
