@@ -152,6 +152,14 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Log.i(TAG, "save bitmap to external shared storage");
 
+                // more better:
+                // https://www.youtube.com/watch?v=tYQ8AO58Aj0
+
+                // better:
+                // https://www.youtube.com/watch?v=Ul4hum3y0J8
+                // https://www.youtube.com/watch?v=XSlvGizGxEs&t=0s
+
+
                 // https://www.youtube.com/watch?v=nA4XWsG9IPM
                 // How to Save Image to External Storage using Java API 30+ || Scoped Storage android Q R || Java
 
