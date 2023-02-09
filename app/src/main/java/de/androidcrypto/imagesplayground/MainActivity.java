@@ -94,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         saveBitmapToExternalSharedStorage = findViewById(R.id.btnSaveBitmapToExternalSharedStorage);
         saveBitmapToExternalSharedStorageLogFile = findViewById(R.id.tvSaveBitmapToExternalSharedStorage);
 
-        // registerWriteExternalStoragePermission();
+        //  registerWriteExternalStoragePermission();
 
         loadImageFromGallery.setOnClickListener(new View.OnClickListener() {
             @Override
