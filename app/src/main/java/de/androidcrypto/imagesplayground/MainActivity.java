@@ -83,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        // encrypt an image file (OWN !) https://stackoverflow.com/questions/66101007/java-aes-gcm-aead-tag-mismatch
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
