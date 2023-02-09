@@ -1,6 +1,7 @@
 package de.androidcrypto.imagesplayground;
 
 import static android.os.Build.VERSION.SDK_INT;
+import static android.os.ext.SdkExtensions.getExtensionVersion;
 
 import static androidx.core.content.PermissionChecker.PERMISSION_DENIED;
 import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
@@ -8,6 +9,7 @@ import static androidx.core.content.PermissionChecker.PERMISSION_GRANTED;
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -15,6 +17,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -53,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
 
     com.google.android.material.textfield.TextInputEditText showAndroidVersion;
 
-    Button loadImageFromGallery;
+    Button loadImageFromGallery, loadImageFromGalleryPhotoPicker;
     ImageView imageOriginal;
     TextView imageOriginalSizes;
 
@@ -75,7 +78,8 @@ public class MainActivity extends AppCompatActivity {
     private Bitmap bitmap;
     private ActivityResultLauncher<String> storageResultActivity;
 
-    private int androidVersion;
+    private int androidVersion = 0;
+    private boolean photoPickerIsAvailable = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
         showAndroidVersion = findViewById(R.id.etShowAndroidVersion);
 
         loadImageFromGallery = findViewById(R.id.btnLoadImageFromGallery);
+        loadImageFromGalleryPhotoPicker = findViewById(R.id.btnLoadImageFromGalleryPhotoPicker);
         imageOriginal = findViewById(R.id.ivOriginal);
         imageOriginalSizes = findViewById(R.id.tvOriginalSizes);
 
@@ -103,17 +108,36 @@ public class MainActivity extends AppCompatActivity {
 
         //  registerWriteExternalStoragePermission();
 
-        showAndroidVersion.setText("aaa");
         androidVersion = getAndroidVersion();
         Log.i(TAG, "the app is running on Android version " + androidVersion);
-        showAndroidVersion.setText("bbb");
-        showAndroidVersion.setText(33);
+        showAndroidVersion.setText(String.valueOf(androidVersion));
+
+        photoPickerIsAvailable = isPhotoPickerAvailable();
 
         loadImageFromGallery.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Log.i(TAG, "load image from Gallery");
                 readImageFromExternalSharedStorage();
+            }
+        });
+
+        loadImageFromGalleryPhotoPicker.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "load image from Gallery with PhotoPicker");
+                if (!photoPickerIsAvailable) {
+                    Log.e(TAG, "PhotoPicker is NOT available on system, aborted");
+                    Toast.makeText(view.getContext(), "PhotoPicker is NOT available on system, aborted", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // note: this line causes a warning but the code will compile and running...
+                ActivityResultContracts.PickVisualMedia.VisualMediaType mediaType = (ActivityResultContracts.PickVisualMedia.VisualMediaType) ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE;
+                PickVisualMediaRequest request = new PickVisualMediaRequest.Builder()
+                        .setMediaType(mediaType)
+                        .build();
+                pickMediaResultLauncher.launch(request);
             }
         });
 
@@ -422,4 +446,37 @@ public class MainActivity extends AppCompatActivity {
     private int getAndroidVersion() {
         return Build.VERSION.SDK_INT;
     }
+
+    @SuppressLint("NewApi")
+    private boolean isPhotoPickerAvailable() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return true;
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            return getExtensionVersion(Build.VERSION_CODES.R) >= 2;
+        } else
+            return false;
+    }
+
+    // Registers a photo picker activity launcher in single-select mode.
+    // Note: When using PickVisualMedia, the photo picker opens in half-screen mode.
+    ActivityResultLauncher<PickVisualMediaRequest> pickMediaResultLauncher =
+            registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), uri -> {
+                // Callback is invoked after the user selects a media item or closes the
+                // photo picker.
+                if (uri != null) {
+                    Log.d("PhotoPicker", "Selected URI: " + uri);
+                    // same method as in imageFileLoaderActivityResultLauncher
+                    imageOriginal.setImageURI(uri);
+                    // get real sizes
+                    BitmapDrawable draw = (BitmapDrawable) imageOriginal.getDrawable();
+                    Bitmap original = draw.getBitmap();
+                    Size size = new Size(original.getWidth(), original.getHeight());
+                    String sizesData = "Image sizes width: " + original.getWidth() +
+                            " height: " + original.getHeight() +
+                            " pixel: " + (original.getWidth() * original.getHeight());
+                    imageOriginalSizes.setText(sizesData);
+                } else {
+                    Log.d("PhotoPicker", "No media selected");
+                }
+            });
 }

@@ -66,6 +66,13 @@
                 android:layout_marginStart="8dp"
                 android:text="load image from Gallery" />
 
+            <Button
+                android:id="@+id/btnLoadImageFromGalleryPhotoPicker"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="load image from Gallery (PhotoPicker)" />
+
             <ImageView
                 android:id="@+id/ivOriginal"
                 android:layout_width="wrap_content"
