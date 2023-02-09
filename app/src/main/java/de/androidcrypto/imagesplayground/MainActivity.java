@@ -34,6 +34,7 @@ import android.util.Log;
 import android.util.Size;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,6 +50,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "ImagesPlayground";
+
+    com.google.android.material.textfield.TextInputEditText showAndroidVersion;
 
     Button loadImageFromGallery;
     ImageView imageOriginal;
@@ -72,10 +75,14 @@ public class MainActivity extends AppCompatActivity {
     private Bitmap bitmap;
     private ActivityResultLauncher<String> storageResultActivity;
 
+    private int androidVersion;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        showAndroidVersion = findViewById(R.id.etShowAndroidVersion);
 
         loadImageFromGallery = findViewById(R.id.btnLoadImageFromGallery);
         imageOriginal = findViewById(R.id.ivOriginal);
@@ -95,6 +102,12 @@ public class MainActivity extends AppCompatActivity {
         saveBitmapToExternalSharedStorageLogFile = findViewById(R.id.tvSaveBitmapToExternalSharedStorage);
 
         //  registerWriteExternalStoragePermission();
+
+        showAndroidVersion.setText("aaa");
+        androidVersion = getAndroidVersion();
+        Log.i(TAG, "the app is running on Android version " + androidVersion);
+        showAndroidVersion.setText("bbb");
+        showAndroidVersion.setText(33);
 
         loadImageFromGallery.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -405,4 +418,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             });
+
+    private int getAndroidVersion() {
+        return Build.VERSION.SDK_INT;
+    }
 }
