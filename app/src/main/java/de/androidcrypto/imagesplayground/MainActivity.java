@@ -47,6 +47,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -233,6 +235,9 @@ public class MainActivity extends AppCompatActivity {
 
                 // start slicing the full ones
 
+                // just for full security
+                byte[] hashSenderBitmapOriginal = calculateSha256Hash(bitmapOriginalByteArray);
+
                 // this happens on receiver side = joining - first have an empty byte array available
                 joinedByteArray = new byte[bitmapOriginalLength];
 
@@ -240,16 +245,39 @@ public class MainActivity extends AppCompatActivity {
                     Log.i(TAG, "slicing part " + numberOfFullSlices);
                     // get the spliced array of each slice
                     byte[] bitmapSlicedByteArray = getImageSlice(bitmapOriginalByteArray, numberOfFullSlices, bitmapSliceLength);
+                    byte[] hashSender = calculateSha256Hash(bitmapSlicedByteArray);
 
                     // on receiver side we are joining the data
-                    joinImageSlices(bitmapSlicedByteArray, numberOfFullSlices, bitmapSliceLength);
+                    byte[] hashReceiver = calculateSha256Hash(bitmapSlicedByteArray);
+                    if (areByteArraysEqual(hashSender, hashReceiver)) {
+                        Log.i(TAG, "hash values for sender and receiver are equals, proceed with joining");
+                       joinImageSlices(bitmapSlicedByteArray, numberOfFullSlices, bitmapSliceLength);
+                       // ask the sender for the next slice
+                    } else {
+                        Log.i(TAG, "hash values for sender and receiver are NOT equals, ask sender for resending the slice");
+                        // ask sender to resend the slice
+                    }
+
                 }
 
                 Log.i(TAG, "now we are running the last one");
                 byte[] bitmapLastSlicedByteArray = getLastImageSlice(bitmapOriginalByteArray, (bitmapFullSlices), bitmapSliceLength, bitmapLengthInLastSlice);
 
                 // on receiver side we are joining the data
+                // repeat the hashing procedure
                 joinLastImageSlice(bitmapLastSlicedByteArray, (bitmapFullSlices), bitmapSliceLength, bitmapLengthInLastSlice);
+
+                // for security reasons hash the joint bitmap
+                byte[] hashReceiverBitmapOriginal = calculateSha256Hash(joinedByteArray);
+                if (areByteArraysEqual(hashReceiverBitmapOriginal, hashReceiverBitmapOriginal)) {
+                //if (areByteArraysEqual(hashReceiverBitmapOriginal, bitmapLastSlicedByteArray)) {
+                    Log.i(TAG, "BitmapOriginal: hash values for sender and receiver are equals, proceed");
+                    // inform the sender that we received the complete image
+                } else {
+                    Log.i(TAG, "BitmapOriginal: hash values for sender and receiver are NOT equals, ask sender for resending the complete image");
+                    // ask sender to resend the bitmap
+                    return;
+                }
 
                 Bitmap splitBitmap = BitmapFactory.decodeByteArray(joinedByteArray, 0, joinedByteArray.length);
                 imageSplit.setImageBitmap(splitBitmap);
@@ -322,6 +350,13 @@ public class MainActivity extends AppCompatActivity {
         return Arrays.copyOfRange(imageByteArray, startCopy, endCopy);
     }
 
+    /**
+     * The method is returning the last ( = incomplete) slice of a byte array
+     * @param imageByteArray Original byte array
+     * @param slice number of slice, beginning with 0
+     * @param sliceLength number of bytes in the sliced byte array (e.g.500)
+     * @return the sliced byte array with length of sliceLength
+     */
     private byte[] getLastImageSlice(byte[] imageByteArray, int slice, int sliceLength, int lastSliceLength) {
         Log.i(TAG, "getLastImageSlice " + slice + " with length " + sliceLength + " last bytes: " + lastSliceLength);
         //byte[] slicedImageByteArray = new byte[sliceLength];
@@ -330,6 +365,15 @@ public class MainActivity extends AppCompatActivity {
         return Arrays.copyOfRange(imageByteArray, startCopy, endCopy);
     }
 
+    /**
+     * this method is combining all slices to the original byte orray
+     * NOTE: you need to define a global variable and size it to the original = target size:
+     * private byte[] joinedByteArray;
+     * joinedByteArray = new byte[bitmapOriginalLength];
+     * @param slicedImageByteArray small (slice) of tge original byte array
+     * @param slice number of slice, beginning with 0
+     * @param sliceLength number of bytes in the sliced byte array (e.g.500)
+     */
 
     private void joinImageSlices (byte[] slicedImageByteArray, int slice, int sliceLength) {
         int targetStartIndex = (slice * sliceLength);
@@ -341,6 +385,15 @@ public class MainActivity extends AppCompatActivity {
                 sliceLength);
     }
 
+    /**
+     * this method is combining the last ( = incomplete) slice to the original byte orray
+     * NOTE: you need to define a global variable and size it to the original = target size:
+     * private byte[] joinedByteArray;
+     * joinedByteArray = new byte[bitmapOriginalLength];
+     * @param slicedImageByteArray small (slice) of tge original byte array
+     * @param slice number of slice, beginning with 0
+     * @param sliceLength number of bytes in the sliced byte array (e.g.500)
+     */
     private void joinLastImageSlice (byte[] slicedImageByteArray, int slice, int sliceLength, int lastSliceLength) {
         int targetStartIndex = (slice * sliceLength);
         System.arraycopy(slicedImageByteArray,
@@ -348,6 +401,37 @@ public class MainActivity extends AppCompatActivity {
                 joinedByteArray,
                 targetStartIndex,
                 lastSliceLength);
+    }
+
+
+    /**
+     * this method is calculating the SHA-256 hash of the input byte array
+     * @param input
+     * @return the SHA-256 hash value of the input
+     */
+    private byte[] calculateSha256Hash(byte[] input) {
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+            md.update(input);
+            return md.digest();
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
+    }
+
+    /**
+     * this method is comparing two byte arrays
+     * @param arrayA
+     * @param arrayB
+     * @return TRUE if both arrays are equal, else return FALSE
+     */
+    private boolean areByteArraysEqual(byte[] arrayA, byte[] arrayB) {
+        if (Arrays.equals(arrayA, arrayB)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 
