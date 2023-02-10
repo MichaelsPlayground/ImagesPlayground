@@ -146,6 +146,32 @@
                 app:dividerInsetStart="16dp" />
 
             <Button
+                android:id="@+id/btnBitmapSplit"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="split Bitmap" />
+
+            <ImageView
+                android:id="@+id/ivBitmapSplit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                />
+
+            <TextView
+                android:id="@+id/tvBitmapSplitSizes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:text="width: 0  height: 0 pixel: 0" />
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:dividerInsetEnd="16dp"
+                app:dividerInsetStart="16dp" />
+
+            <Button
                 android:id="@+id/btnCheckGrantedStoragePermission"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

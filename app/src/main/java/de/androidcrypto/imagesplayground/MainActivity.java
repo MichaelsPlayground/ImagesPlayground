@@ -47,6 +47,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -67,6 +68,11 @@ public class MainActivity extends AppCompatActivity {
     Button bitmapToByteArrayConversion;
     ImageView imageConversion;
     TextView imageConversionSizes;
+
+    Button bitmapSplit;
+    ImageView imageSplit;
+    TextView imageSplitSizes;
+    private byte[] joinedByteArray;
 
     Button checkForGrantedStoragePermission;
     boolean storagePermissionIsGranted = false;
@@ -103,6 +109,10 @@ public class MainActivity extends AppCompatActivity {
         bitmapToByteArrayConversion = findViewById(R.id.btnBitmapConversionByteArray);
         imageConversion = findViewById(R.id.ivBitmapConversion);
         imageConversionSizes = findViewById(R.id.tvBitmapConversionSizes);
+
+        bitmapSplit = findViewById(R.id.btnBitmapSplit);
+        imageSplit = findViewById(R.id.ivBitmapSplit);
+        imageSplitSizes = findViewById(R.id.tvBitmapSplitSizes);
 
         checkForGrantedStoragePermission = findViewById(R.id.btnCheckGrantedStoragePermission);
         grantStoragePermission = findViewById(R.id.btnGrantStoragePermission);
@@ -198,6 +208,59 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        bitmapSplit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "bitmap split");
+
+                Bitmap bitmap = ((BitmapDrawable) imageOriginal.getDrawable()).getBitmap();
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 10, stream);
+                byte[] bitmapOriginalByteArray = stream.toByteArray();
+
+                // let us split the byte array
+                int bitmapSliceLength = 500;
+                int bitmapOriginalLength = bitmapOriginalByteArray.length;
+                int bitmapFullSlices = bitmapOriginalLength / bitmapSliceLength;
+                int bitmapLengthInFullSlices = bitmapFullSlices * bitmapSliceLength;
+                int bitmapLengthInLastSlice = bitmapOriginalLength - bitmapLengthInFullSlices;
+
+                Log.i(TAG, "the original bitmap length is " + bitmapOriginalLength);
+                Log.i(TAG, "the bitmapSliceLength is " + bitmapSliceLength);
+                Log.i(TAG, "we do have full slices: " + bitmapFullSlices);
+                Log.i(TAG, "bitmapLengthInFullSplices is " + bitmapLengthInFullSlices);
+                Log.i(TAG, "bitmapLengthInLastSlice is " + bitmapLengthInLastSlice);
+
+                // start slicing the full ones
+
+                // this happens on receiver side = joining - first have an empty byte array available
+                joinedByteArray = new byte[bitmapOriginalLength];
+
+                for (int numberOfFullSlices = 0; numberOfFullSlices < bitmapFullSlices; numberOfFullSlices++) {
+                    Log.i(TAG, "slicing part " + numberOfFullSlices);
+                    // get the spliced array of each slice
+                    byte[] bitmapSlicedByteArray = getImageSlice(bitmapOriginalByteArray, numberOfFullSlices, bitmapSliceLength);
+
+                    // on receiver side we are joining the data
+                    joinImageSlices(bitmapSlicedByteArray, numberOfFullSlices, bitmapSliceLength);
+                }
+
+                Log.i(TAG, "now we are running the last one");
+                byte[] bitmapLastSlicedByteArray = getLastImageSlice(bitmapOriginalByteArray, (bitmapFullSlices), bitmapSliceLength, bitmapLengthInLastSlice);
+
+                // on receiver side we are joining the data
+                joinLastImageSlice(bitmapLastSlicedByteArray, (bitmapFullSlices), bitmapSliceLength, bitmapLengthInLastSlice);
+
+                Bitmap splitBitmap = BitmapFactory.decodeByteArray(joinedByteArray, 0, joinedByteArray.length);
+                imageSplit.setImageBitmap(splitBitmap);
+                String sizesData = "imageByteArray length: " + joinedByteArray.length + "\n";
+                sizesData += "Image sizes width: " + splitBitmap.getWidth() +
+                        " height: " + splitBitmap.getHeight() +
+                        " pixel: " + (splitBitmap.getWidth() * splitBitmap.getHeight());
+                imageSplitSizes.setText(sizesData);
+            }
+        });
+
         checkForGrantedStoragePermission.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -244,6 +307,49 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    /**
+     * The method is returning the slice of a byte array
+     * @param imageByteArray Original byte array
+     * @param slice number of slice, beginning with 0
+     * @param sliceLength number of bytes in the sliced byte array (e.g.500)
+     * @return the sliced byte array with length of sliceLength
+     */
+    private byte[] getImageSlice(byte[] imageByteArray, int slice, int sliceLength) {
+        Log.i(TAG, "getImageSlice " + slice + " with length " + sliceLength);
+        int startCopy = (slice * sliceLength);
+        int endCopy = (slice * sliceLength) + sliceLength; // endcopy is EXCLUDING the value a it start with 0 for the first element
+        return Arrays.copyOfRange(imageByteArray, startCopy, endCopy);
+    }
+
+    private byte[] getLastImageSlice(byte[] imageByteArray, int slice, int sliceLength, int lastSliceLength) {
+        Log.i(TAG, "getLastImageSlice " + slice + " with length " + sliceLength + " last bytes: " + lastSliceLength);
+        //byte[] slicedImageByteArray = new byte[sliceLength];
+        int startCopy = (slice * sliceLength);
+        int endCopy = (slice * sliceLength) + lastSliceLength; // endcopy is EXCLUDING the value a it start with 0 for the first element
+        return Arrays.copyOfRange(imageByteArray, startCopy, endCopy);
+    }
+
+
+    private void joinImageSlices (byte[] slicedImageByteArray, int slice, int sliceLength) {
+        int targetStartIndex = (slice * sliceLength);
+        Log.i(TAG, "joinImageSlices targetStartIndex is " + targetStartIndex);
+        System.arraycopy(slicedImageByteArray,
+                0,
+                joinedByteArray,
+                targetStartIndex,
+                sliceLength);
+    }
+
+    private void joinLastImageSlice (byte[] slicedImageByteArray, int slice, int sliceLength, int lastSliceLength) {
+        int targetStartIndex = (slice * sliceLength);
+        System.arraycopy(slicedImageByteArray,
+                0,
+                joinedByteArray,
+                targetStartIndex,
+                lastSliceLength);
+    }
+
 
     /**
      * section for storage of image files
